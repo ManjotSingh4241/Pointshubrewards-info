@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "pointshub-517bd"
+  },
+  "targets": {
+    "pointshub-517bd": {
+      "hosting": {
+        "Info": [
+          "pointshub-info"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
