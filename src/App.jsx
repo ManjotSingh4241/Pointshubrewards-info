@@ -23,7 +23,6 @@ import {
   ShieldCheck,
   ShoppingBag,
   Smartphone,
-  Sparkles,
   Store,
   Target,
   User,
@@ -450,8 +449,8 @@ function App() {
         <div className="heroGlow" aria-hidden="true" />
         <div className="heroContent">
           <div className="pill">
-            <Sparkles size={16} />
-            Built for local businesses — not big chains
+            <Rocket size={16} />
+            Now accepting founding stores — limited spots open
           </div>
 
           <h2>
