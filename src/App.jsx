@@ -71,58 +71,57 @@ const links = {
     ),
 };
 
-// Chat assistant — deliberately rule-based, not a live LLM. It only ever
-// answers from the fixed, public-safe knowledge base below, so it has no
-// way to leak source code, architecture, roadmap, or business details even
-// if someone tries to prompt it into doing so. Add new public-facing Q&A
-// here; never add anything internal/confidential to this list.
+// Chat assistant — deliberately rule-based, not a live LLM, so there's no
+// prompt-injection surface: it can only ever return one of the fixed
+// strings below. The knowledge base is written from the parts of the
+// project doc that are genuinely fine for a prospective store or customer
+// to hear (value prop, how it works, ROI, target businesses, pricing,
+// objections, trust/security reassurance). It deliberately leaves out
+// anything that's actually internal — source code, database/schema
+// details, the exact security implementation, unfinalized business-model
+// options, the roadmap, and known engineering issues — since none of that
+// helps a store decide to sign up, and it's the kind of thing "never share
+// confidential info" exists to protect. If you want something specific
+// added, add it here explicitly rather than widening what the bot can see.
 const CHAT_SENSITIVE_KEYWORDS = [
-  "code",
-  "source",
+  "source code",
   "github",
   "repo",
   "api key",
   "access key",
-  "backend",
   "back-end",
   "database",
   "firestore",
-  "firebase",
-  "architecture",
+  "cloud function",
+  "your architecture",
   "security rule",
-  "admin panel",
-  "admin dashboard",
-  "employee data",
   "role structure",
-  "business model",
-  "revenue",
-  "margin",
-  "profit",
+  "your business model",
+  "your revenue",
+  "your margin",
+  "how do you make money",
   "funding",
   "investor",
-  "roadmap",
-  "phase 1",
+  "your roadmap",
+  "next phase",
   "tech stack",
+  "built with",
+  "built on",
   "framework",
-  "react",
   "vite",
-  "cloud function",
   "schema",
-  "fraud",
   "password",
   "credential",
   "confidential",
   "internal doc",
   "master doc",
-  "secret",
   "vulnerab",
   "exploit",
-  "hack",
 ];
 
 const CHAT_KNOWLEDGE_BASE = [
   {
-    keywords: ["price", "pricing", "cost", "how much", "fee"],
+    keywords: ["price", "pricing", "cost", "how much", "fee", "$"],
     answer: `PointsHub is ${PRICING.currency}${PRICING.price}/month after a free ${PRICING.trialDays}-day trial for your store. Applying is free, and nothing is charged until the trial ends.`,
   },
   {
@@ -130,48 +129,141 @@ const CHAT_KNOWLEDGE_BASE = [
     answer: `Every store gets a ${PRICING.trialDays}-day free trial before anything is charged. Apply and our team will personally set your account up.`,
   },
   {
-    keywords: ["apply", "join", "sign up", "signup", "become a store", "become a partner", "get started"],
+    keywords: [
+      "apply",
+      "sign up",
+      "signup",
+      "become a store",
+      "become a partner",
+      "get started",
+      "onboard",
+      "join pointshub",
+      "how do i join",
+      "want to join",
+      "how to join",
+    ],
     answer: 'Click "Apply to Join" anywhere on the page to fill out a quick form with your store details — our team will follow up personally to get you set up.',
   },
   {
-    keywords: ["how does it work", "how it works", "what is pointshub", "what does pointshub do"],
-    answer: "Customers get a PointsHub card. Stores add points after a purchase, and customers redeem points for rewards once they've collected enough — no developers or new hardware required.",
+    keywords: [
+      "how does it work",
+      "how it works",
+      "what is pointshub",
+      "what does pointshub do",
+      "what is this",
+      "explain pointshub",
+    ],
+    answer: "Customers carry one PointsHub membership instead of a separate card for every business. They earn points at any participating store, check their balance, and redeem rewards once they've collected enough — one card, multiple businesses, one rewards ecosystem.",
   },
   {
-    keywords: ["pos", "equipment", "register", "hardware"],
-    answer: "PointsHub runs alongside whatever register or POS you already use — staff add or redeem points from a simple dashboard on any phone, tablet, or computer.",
+    keywords: [
+      "profit",
+      "roi",
+      "return on investment",
+      "benefit my store",
+      "help my store",
+      "help my business",
+      "worth it",
+      "increase sales",
+      "more sales",
+      "more customers",
+      "grow my business",
+      "grow my store",
+      "pay for itself",
+      "why should i",
+      "what's in it for me",
+      "value",
+      "make money",
+    ],
+    answer: "PointsHub gives customers a reason to come back instead of a competitor — every purchase earns points toward a reward, so you're rewarding the repeat visits that already drive most of a local business's revenue. You also get visibility into who your regular customers are, without building or paying for your own loyalty app.",
   },
   {
-    keywords: ["setup", "how long", "onboarding", "get live", "go live"],
-    answer: "Most stores are live within a couple of business days of applying — we personally help you get set up.",
+    keywords: ["why not build my own", "build my own app", "custom app", "own loyalty program", "own loyalty app"],
+    answer: "Building your own loyalty app usually costs thousands of dollars and takes months. PointsHub is ready to use the same day you sign up, and you're not stuck maintaining software — we handle that.",
   },
   {
-    keywords: ["reward", "redeem", "points value", "points worth"],
-    answer: "Each store sets its own rewards and point values — PointsHub just handles the tracking, so you stay in control of what customers earn and redeem.",
+    keywords: ["network", "other stores", "other businesses", "more stores join", "multiple businesses", "one card"],
+    answer: "The bigger the PointsHub network gets, the more valuable it is for everyone — customers get more places to earn and redeem points, which makes them more likely to keep using their PointsHub card, which brings more repeat visits to every participating store, including yours.",
+  },
+  {
+    keywords: [
+      "type of business",
+      "types of business",
+      "kind of business",
+      "kinds of business",
+      "what businesses",
+      "which businesses",
+      "who is this for",
+      "is this for me",
+      "good fit for",
+      "suited for",
+      "kind of store",
+      "gas station",
+      "convenience store",
+      "restaurant",
+      "cafe",
+      "café",
+      "barber",
+      "car wash",
+      "retail store",
+    ],
+    answer: "PointsHub works well for any local business with repeat customers — gas stations, convenience stores, restaurants, cafés, salons, barbers, car washes, gyms, and retail shops are all a great fit.",
+  },
+  {
+    keywords: ["pos", "equipment", "register", "hardware", "point of sale", "scanner"],
+    answer: "PointsHub runs alongside whatever register or POS you already use — staff add or redeem points from a simple dashboard on any phone, tablet, or computer. No new hardware is required to get started.",
+  },
+  {
+    keywords: ["setup", "how long", "onboarding", "get live", "go live", "how fast"],
+    answer: "Most stores are live within a couple of business days of applying — we personally help you get set up, including getting your customers enrolled.",
+  },
+  {
+    keywords: ["reward", "redeem", "points value", "points worth", "how many points"],
+    answer: "Each store sets its own rewards and point values — PointsHub just handles the tracking, so you stay in control of what customers earn and what they can redeem it for.",
+  },
+  {
+    keywords: ["barcode", "physical card", "loyalty card", "membership card", "member number", "do customers need an app", "download an app"],
+    answer: "Customers don't need to download an app. Each customer gets a PointsHub card or membership number that staff can look up or scan at checkout — fast enough to use at a busy counter.",
+  },
+  {
+    keywords: ["fraud", "cheat the system", "fake points", "tamper", "secure", "security", "safe", "hacked", "steal points"],
+    answer: "Every points transaction is validated on our end before it's applied, so points can't be faked or added just by tampering with a customer's phone. Each store also only ever sees its own transaction activity.",
+  },
+  {
+    keywords: ["employee", "staff", "my team", "cashier", "workers"],
+    answer: "Yes — your staff can be given their own access to add or redeem points from the store dashboard. It's built to be fast enough to use at checkout with no real training needed.",
+  },
+  {
+    keywords: ["multiple locations", "more than one store", "another location", "franchise"],
+    answer: "Each location gets its own store account. Apply and let us know you have multiple locations — we'll help you get all of them set up.",
   },
   {
     keywords: ["customer portal", "check my points", "check points", "balance"],
     answer: 'Customers can check their points balance and recent activity anytime through the Customer Portal, linked in the "For customers" section and the footer.',
   },
   {
-    keywords: ["contact", "support", "email", "phone number", "reach you", "talk to someone", "human"],
+    keywords: ["contact", "support", "email", "phone number", "reach you", "talk to someone", "human", "real person"],
     answer: `You can reach our team directly at ${links.support.replace("mailto:", "")} — happy to help with anything specific to your store.`,
   },
   {
-    keywords: ["categor", "coffee", "salon", "bakery", "gym", "retail", "founding store", "spot open"],
+    keywords: ["categor", "coffee", "salon", "bakery", "gym", "retail", "founding store", "spot open", "spots left"],
     answer: `We're currently onboarding founding stores in a few categories: ${founderCategories.map((c) => c.name).join(", ")}. Apply to claim a spot.`,
   },
   {
-    keywords: ["privacy", "shared with other stores", "share my data"],
-    answer: "No — your customer activity and redemption data belong to your store. PointsHub only shows you what happened at your business.",
+    keywords: ["privacy", "shared with other stores", "share my data", "my customer data", "customer information"],
+    answer: "No — your customer activity and redemption data belong to your store. PointsHub only shows you what happened at your business, not what customers do at other stores.",
   },
   {
-    keywords: ["cancel", "refund", "commitment", "contract"],
-    answer: "There's no long-term commitment to apply — you get the full free trial before anything is ever charged.",
+    keywords: ["cancel", "refund", "commitment", "contract", "lock in", "long term"],
+    answer: "There's no long-term commitment to apply — you get the full free trial before anything is ever charged, and you can walk away if it's not working for you.",
   },
   {
-    keywords: ["store login", "log in", "existing store", "my account"],
-    answer: 'If you\'re already a PointsHub store, use the "Store Login" button in the top navigation to reach your dashboard.',
+    keywords: ["store login", "log in", "existing store", "my account", "my dashboard", "see all stores", "admin"],
+    answer: 'If you\'re already a PointsHub store, use the "Store Login" button in the top navigation to reach your store\'s dashboard — that\'s where you manage your own account, customers, and rewards.',
+  },
+  {
+    keywords: ["who runs", "who owns", "who is behind", "who made"],
+    answer: "PointsHub Rewards is the team behind the platform — reach out to support@pointshubrewards.com if you'd like to talk with us directly.",
   },
 ];
 
