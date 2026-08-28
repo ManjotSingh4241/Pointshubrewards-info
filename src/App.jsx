@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
   ArrowRight,
   BadgeCheck,
+  Bot,
   Building2,
   Check,
   CheckCircle2,
@@ -15,11 +16,13 @@ import {
   Loader2,
   Mail,
   MapPin,
+  MessageCircle,
   Phone,
   Plus,
   Repeat,
   Rocket,
   Scissors,
+  Send,
   ShieldCheck,
   ShoppingBag,
   Smartphone,
@@ -67,6 +70,134 @@ const links = {
       "Hi PointsHub team,\n\nI'd like to sign my store up for PointsHub Rewards.\n\nStore name:\nLocation:\nBest phone/email to reach me:\n\nThanks!"
     ),
 };
+
+// Chat assistant — deliberately rule-based, not a live LLM. It only ever
+// answers from the fixed, public-safe knowledge base below, so it has no
+// way to leak source code, architecture, roadmap, or business details even
+// if someone tries to prompt it into doing so. Add new public-facing Q&A
+// here; never add anything internal/confidential to this list.
+const CHAT_SENSITIVE_KEYWORDS = [
+  "code",
+  "source",
+  "github",
+  "repo",
+  "api key",
+  "access key",
+  "backend",
+  "back-end",
+  "database",
+  "firestore",
+  "firebase",
+  "architecture",
+  "security rule",
+  "admin panel",
+  "admin dashboard",
+  "employee data",
+  "role structure",
+  "business model",
+  "revenue",
+  "margin",
+  "profit",
+  "funding",
+  "investor",
+  "roadmap",
+  "phase 1",
+  "tech stack",
+  "framework",
+  "react",
+  "vite",
+  "cloud function",
+  "schema",
+  "fraud",
+  "password",
+  "credential",
+  "confidential",
+  "internal doc",
+  "master doc",
+  "secret",
+  "vulnerab",
+  "exploit",
+  "hack",
+];
+
+const CHAT_KNOWLEDGE_BASE = [
+  {
+    keywords: ["price", "pricing", "cost", "how much", "fee"],
+    answer: `PointsHub is ${PRICING.currency}${PRICING.price}/month after a free ${PRICING.trialDays}-day trial for your store. Applying is free, and nothing is charged until the trial ends.`,
+  },
+  {
+    keywords: ["trial"],
+    answer: `Every store gets a ${PRICING.trialDays}-day free trial before anything is charged. Apply and our team will personally set your account up.`,
+  },
+  {
+    keywords: ["apply", "join", "sign up", "signup", "become a store", "become a partner", "get started"],
+    answer: 'Click "Apply to Join" anywhere on the page to fill out a quick form with your store details — our team will follow up personally to get you set up.',
+  },
+  {
+    keywords: ["how does it work", "how it works", "what is pointshub", "what does pointshub do"],
+    answer: "Customers get a PointsHub card. Stores add points after a purchase, and customers redeem points for rewards once they've collected enough — no developers or new hardware required.",
+  },
+  {
+    keywords: ["pos", "equipment", "register", "hardware"],
+    answer: "PointsHub runs alongside whatever register or POS you already use — staff add or redeem points from a simple dashboard on any phone, tablet, or computer.",
+  },
+  {
+    keywords: ["setup", "how long", "onboarding", "get live", "go live"],
+    answer: "Most stores are live within a couple of business days of applying — we personally help you get set up.",
+  },
+  {
+    keywords: ["reward", "redeem", "points value", "points worth"],
+    answer: "Each store sets its own rewards and point values — PointsHub just handles the tracking, so you stay in control of what customers earn and redeem.",
+  },
+  {
+    keywords: ["customer portal", "check my points", "check points", "balance"],
+    answer: 'Customers can check their points balance and recent activity anytime through the Customer Portal, linked in the "For customers" section and the footer.',
+  },
+  {
+    keywords: ["contact", "support", "email", "phone number", "reach you", "talk to someone", "human"],
+    answer: `You can reach our team directly at ${links.support.replace("mailto:", "")} — happy to help with anything specific to your store.`,
+  },
+  {
+    keywords: ["categor", "coffee", "salon", "bakery", "gym", "retail", "founding store", "spot open"],
+    answer: `We're currently onboarding founding stores in a few categories: ${founderCategories.map((c) => c.name).join(", ")}. Apply to claim a spot.`,
+  },
+  {
+    keywords: ["privacy", "shared with other stores", "share my data"],
+    answer: "No — your customer activity and redemption data belong to your store. PointsHub only shows you what happened at your business.",
+  },
+  {
+    keywords: ["cancel", "refund", "commitment", "contract"],
+    answer: "There's no long-term commitment to apply — you get the full free trial before anything is ever charged.",
+  },
+  {
+    keywords: ["store login", "log in", "existing store", "my account"],
+    answer: 'If you\'re already a PointsHub store, use the "Store Login" button in the top navigation to reach your dashboard.',
+  },
+];
+
+const CHAT_FALLBACK_REPLY = `I don't have an answer for that, but our team can help directly — email ${links.support.replace(
+  "mailto:",
+  ""
+)} or use the Apply to Join button to get in touch.`;
+
+const CHAT_SENSITIVE_REPLY = `That's not something I can get into here — for anything about how PointsHub is built or run internally, please reach out to our team directly at ${links.support.replace(
+  "mailto:",
+  ""
+)}.`;
+
+function getChatReply(userText) {
+  const text = userText.toLowerCase();
+
+  if (CHAT_SENSITIVE_KEYWORDS.some((keyword) => text.includes(keyword))) {
+    return CHAT_SENSITIVE_REPLY;
+  }
+
+  const match = CHAT_KNOWLEDGE_BASE.find((entry) =>
+    entry.keywords.some((keyword) => text.includes(keyword))
+  );
+
+  return match ? match.answer : CHAT_FALLBACK_REPLY;
+}
 
 const benefits = [
   {
@@ -400,6 +531,85 @@ function FaqItem({ item, isOpen, onToggle }) {
   );
 }
 
+function ChatWidget() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    {
+      role: "bot",
+      text: "Hi! I'm the PointsHub assistant. Ask me about pricing, how it works, or applying to join — for anything else, email support@pointshubrewards.com.",
+    },
+  ]);
+  const [input, setInput] = useState("");
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isOpen]);
+
+  const handleSend = (e) => {
+    e.preventDefault();
+    const text = input.trim();
+    if (!text) return;
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", text },
+      { role: "bot", text: getChatReply(text) },
+    ]);
+    setInput("");
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        className="chatBubble"
+        onClick={() => setIsOpen((v) => !v)}
+        aria-label={isOpen ? "Close chat" : "Open chat"}
+      >
+        {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
+      </button>
+
+      {isOpen && (
+        <div className="chatPanel" role="dialog" aria-label="PointsHub assistant chat">
+          <div className="chatHeader">
+            <div className="chatHeaderIcon">
+              <Bot size={18} />
+            </div>
+            <div>
+              <h4>PointsHub Assistant</h4>
+              <p>Answers common questions</p>
+            </div>
+          </div>
+
+          <div className="chatMessages">
+            {messages.map((m, i) => (
+              <div key={i} className={`chatMessage ${m.role}`}>
+                {m.text}
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+
+          <form className="chatInputRow" onSubmit={handleSend}>
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask a question..."
+            />
+            <button type="submit" aria-label="Send">
+              <Send size={18} />
+            </button>
+          </form>
+        </div>
+      )}
+    </>
+  );
+}
+
 function App() {
   const [openFaq, setOpenFaq] = useState(0);
   const [isApplyOpen, setIsApplyOpen] = useState(false);
@@ -449,8 +659,8 @@ function App() {
         <div className="heroGlow" aria-hidden="true" />
         <div className="heroContent">
           <div className="pill">
-            <Rocket size={16} />
-            Now accepting founding stores — limited spots open
+            <Zap size={16} />
+            Loyalty, leveled up.
           </div>
 
           <h2>
@@ -751,7 +961,7 @@ function App() {
             <p>Your current PointsHub balance</p>
 
             <div className="phoneItem">
-              <span>Petro Store</span>
+              <span>Salon</span>
               <strong>+100</strong>
             </div>
 
@@ -916,6 +1126,7 @@ function App() {
       </footer>
 
       <ApplyModal isOpen={isApplyOpen} onClose={() => setIsApplyOpen(false)} />
+      <ChatWidget />
     </main>
   );
 }
